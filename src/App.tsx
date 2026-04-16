@@ -181,41 +181,76 @@ function SetupWizard({ onDone }: any) {
 }
 
 function Dashboard({ state, standards, syncStatus, lastSync, onStart, onRefresh }: any) {
-  const { history } = state;
-  const today = new Date().toDateString();
-  const todayN = history.filter((i: any) => new Date(i.date).toDateString() === today).length;
+  const { history, plan } = state;
+  const today = new Date().toLocaleDateString();
+  const todayN = history.filter((i: any) => new Date(i.date).toLocaleDateString() === today).length;
   const avg = history.length ? Math.round(history.reduce((a: any, b: any) => a + b.pct, 0) / history.length) : 0;
+  
+  // Racha de Seguridad (días seguidos con inspecciones)
+  const streak = (() => {
+    if (!history.length) return 0;
+    const dates = [...new Set(history.map((i: any) => new Date(i.date).toLocaleDateString()))].sort((a: any, b: any) => new Date(b).getTime() - new Date(a).getTime());
+    let s = 0;
+    let curr = new Date();
+    for (let d of dates) {
+      if (d === curr.toLocaleDateString()) { s++; curr.setDate(curr.getDate() - 1); }
+      else break;
+    }
+    return s;
+  })();
+
+  const todayPlan = plan?.filter((p: any) => {
+    const pd = new Date(p.fecha).toLocaleDateString();
+    return pd === today;
+  }) || [];
+
   return (
     <div style={S.screen}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 14 }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
         <div style={{ fontSize: 20, fontWeight: 700 }}>Panel HSE</div>
+        <div style={{ display: "flex", alignItems: "center", gap: 6, background: "#fef3c7", padding: "4px 10px", borderRadius: 20, border: "1px solid #fcd34d" }}>
+          <span style={{ fontSize: 14 }}>🔥</span>
+          <span style={{ fontSize: 12, fontWeight: 700, color: "#92400e" }}>{streak} días</span>
+        </div>
       </div>
+      
       <SyncBanner status={syncStatus} lastSync={lastSync} onRefresh={onRefresh} count={standards.length} />
       
-      <div style={{ ...S.card, background: "linear-gradient(135deg, #0f172a 0%, #1e293b 100%)", color: "#fff", padding: 24, marginBottom: 16, borderRadius: 20, boxShadow: "0 10px 25px -5px rgba(0,0,0,0.1)" }}>
-        <div style={{ fontSize: 14, opacity: 0.8, marginBottom: 4 }}>Gestión de Auditorías</div>
-        <div style={{ fontSize: 24, fontWeight: 800, letterSpacing: "-0.02em", marginBottom: 20 }}>EHS Audit Pro</div>
-        <button style={{ ...S.btn, background: "#fff", color: "#0f172a", fontWeight: 700, border: "none", width: "auto", padding: "12px 24px", borderRadius: 12, fontSize: 14 }} onClick={onStart}>
-          Nueva Inspección →
-        </button>
-      </div>
+      {todayPlan.length > 0 ? (
+        <div style={{ ...S.card, background: "linear-gradient(135deg, #0ea5e9 0%, #2563eb 100%)", color: "#fff", padding: 20, marginBottom: 16, borderRadius: 16 }}>
+          <div style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", opacity: 0.8, marginBottom: 8, letterSpacing: "0.05em" }}>Plan de Hoy</div>
+          {todayPlan.map((p: any, idx: number) => (
+            <div key={idx} style={{ marginBottom: idx < todayPlan.length - 1 ? 12 : 0 }}>
+              <div style={{ fontSize: 16, fontWeight: 700 }}>{p.tipo === "conducta" ? "Auditoría de Conductas" : (standards.find((s:any)=>s.id===p.stdId)?.titulo || "Inspección")}</div>
+              <div style={{ fontSize: 13, opacity: 0.9, marginTop: 2 }}>📍 {p.lugar}</div>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <div style={{ ...S.card, background: "linear-gradient(135deg, #0f172a 0%, #1e293b 100%)", color: "#fff", padding: 20, marginBottom: 16, borderRadius: 16 }}>
+          <div style={{ fontSize: 14, opacity: 0.8, marginBottom: 4 }}>EHS Audit Pro</div>
+          <div style={{ fontSize: 18, fontWeight: 700 }}>Sin inspecciones programadas para hoy.</div>
+        </div>
+      )}
 
       <div style={S.statRow}>
         {[[ "Total", history.length, "#0ea5e9" ], [ "Promedio", `${avg}%`, pctColor(avg) ], [ "Hoy", todayN, "#7c3aed" ]].map(([l, v, c]: any) => (
           <div key={l} style={S.statBox}><div style={{ fontSize: 22, fontWeight: 700, color: c }}>{v}</div><div style={{ fontSize: 11, color: "var(--color-text-tertiary)", marginTop: 2 }}>{l}</div></div>
         ))}
       </div>
-      <button style={{ ...S.btn, ...S.btnP, padding: 14, fontSize: 15, marginBottom: 16 }} onClick={onStart}>+ Nueva Inspección</button>
+
+      <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 10, marginTop: 10 }}>Actividad Reciente</div>
       {[...history].reverse().slice(0, 4).map((i: any) => {
-        const s = standards.find((s: any) => s.id === i.stdId) || { titulo: i.stdId, cat: "instalaciones" };
+        const isCond = i.type === "conducta";
+        const s = isCond ? { titulo: "Conductas", cat: "conducta" } : (standards.find((s: any) => s.id === i.stdId) || { titulo: i.stdId, cat: "instalaciones" });
         return (
           <div key={i.id} style={{ ...S.card, display: "flex", alignItems: "center", gap: 12, padding: 12, marginBottom: 8 }}>
-            <div style={{ width: 46, height: 46, borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 700, fontSize: 13, flexShrink: 0, background: pctColor(i.pct) + "22", color: pctColor(i.pct) }}>{i.pct}%</div>
+            <div style={{ width: 40, height: 40, borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 700, fontSize: 12, flexShrink: 0, background: pctColor(i.pct) + "22", color: pctColor(i.pct) }}>{i.pct}%</div>
             <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ fontWeight: 500, fontSize: 13, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{s.titulo}</div>
+              <div style={{ fontWeight: 500, fontSize: 13, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{isCond ? "Auditoría de Conductas" : s.titulo}</div>
               <div style={{ fontSize: 11, color: "var(--color-text-tertiary)" }}>{new Date(i.date).toLocaleDateString("es-AR")}</div>
             </div>
-            <span style={{ fontSize: 11, padding: "3px 10px", borderRadius: 20, background: "var(--color-background-secondary)", border: "1px solid var(--color-border-tertiary)", whiteSpace: "nowrap" }}>{i.iper}</span>
+            <span style={{ fontSize: 10, padding: "3px 8px", borderRadius: 20, background: "var(--color-background-secondary)", border: "1px solid var(--color-border-tertiary)" }}>{isCond ? `${i.safe}S` : i.iper}</span>
           </div>
         );
       })}
@@ -333,10 +368,20 @@ function ConductaFlow({ conductas, context, onSave, onCancel }: any) {
   const [phase, setPhase] = useState("inspect");
 
   const cats = [...new Set(conductas.map((c: any) => c.cat)) as any];
-  const total = Object.keys(results).length;
+  const totalItems = conductas.length;
+  const answered = Object.keys(results).length;
+  const progress = Math.round((answered / totalItems) * 100);
+  
   const safe = Object.values(results).filter(v => v === "S").length;
   const risk = Object.values(results).filter(v => v === "R").length;
+  const total = answered;
   const pct = total > 0 ? Math.round((safe / total) * 100) : 100;
+
+  function share(data: any) {
+    const text = `🛡️ *Reporte de Conductas HSE*\n\n📅 Fecha: ${new Date(data.date).toLocaleDateString()}\n👤 Inspector: ${data.context.inspector}\n📍 Ubicación: ${data.context.sitio} - ${data.context.area}\n\n✅ Seguros: ${data.safe}\n⚠️ Riesgos: ${data.risk}\n📊 Cumplimiento: ${data.pct}%\n\n_Generado por EHS Audit Pro_`;
+    const url = `https://wa.me/?text=${encodeURIComponent(text)}`;
+    window.open(url, "_blank");
+  }
 
   if (phase === "result") {
     const c = pctColor(pct);
@@ -355,16 +400,27 @@ function ConductaFlow({ conductas, context, onSave, onCancel }: any) {
           <div style={S.statBox}><div style={{ fontSize: 22, fontWeight: 700, color: "#ef4444" }}>{risk}</div><div style={{ fontSize: 11, color: "var(--color-text-tertiary)", marginTop: 2 }}>Riesgos</div></div>
           <div style={S.statBox}><div style={{ fontSize: 22, fontWeight: 700, color: "#0ea5e9" }}>{total}</div><div style={{ fontSize: 11, color: "var(--color-text-tertiary)", marginTop: 2 }}>Total</div></div>
         </div>
-        <button style={{ ...S.btn, ...S.btnP }} onClick={() => onSave({ id: uid(), type: "conducta", date: new Date().toISOString(), results, notes, pct, safe, risk, total, context })}>💾 Guardar Reporte</button>
+        <div style={{ display: "flex", gap: 8 }}>
+          <button style={{ ...S.btn, flex: 1 }} onClick={() => share({ date: new Date().toISOString(), context, safe, risk, pct })}>📤 Compartir</button>
+          <button style={{ ...S.btn, ...S.btnP, flex: 1 }} onClick={() => onSave({ id: uid(), type: "conducta", date: new Date().toISOString(), results, notes, pct, safe, risk, total, context })}>💾 Guardar</button>
+        </div>
       </div>
     );
   }
 
   return (
     <div style={S.screen}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
         <div style={{ fontSize: 20, fontWeight: 700 }}>Conductas</div>
         <button style={{ ...S.btn, ...S.sm, width: "auto" }} onClick={onCancel}>Cancelar</button>
+      </div>
+      
+      <div style={{ marginBottom: 16 }}>
+        <div style={{ display: "flex", justifyContent: "space-between", fontSize: 11, fontWeight: 600, color: "var(--color-text-tertiary)", marginBottom: 4 }}>
+          <span>Progreso de observación</span>
+          <span>{progress}%</span>
+        </div>
+        <div style={S.xpBar}><div style={{ ...S.xpFill, width: `${progress}%` }} /></div>
       </div>
       
       {cats.map((cat: any) => (
@@ -372,7 +428,7 @@ function ConductaFlow({ conductas, context, onSave, onCancel }: any) {
           <div style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", color: "#0ea5e9", marginBottom: 8, letterSpacing: "0.05em", paddingLeft: 4 }}>{cat}</div>
           <div style={{ display: "grid", gap: 8 }}>
             {conductas.filter((c: any) => c.cat === cat).map((c: any) => (
-              <div key={c.id} style={{ ...S.card, padding: 12, marginBottom: 0 }}>
+              <div key={c.id} style={{ ...S.card, padding: 12, marginBottom: 0, border: results[c.id] === "R" ? "1.5px solid #ef4444" : "1px solid var(--color-border-tertiary)" }}>
                 <div style={{ fontSize: 13, fontWeight: 500, marginBottom: 10 }}>{c.t}</div>
                 <div style={{ display: "flex", gap: 8 }}>
                   <button 
@@ -394,8 +450,8 @@ function ConductaFlow({ conductas, context, onSave, onCancel }: any) {
                 </div>
                 {results[c.id] === "R" && (
                   <input 
-                    style={{ ...S.input, marginTop: 10, marginBottom: 0, fontSize: 12, padding: "8px 10px" }} 
-                    placeholder="Observación del riesgo..." 
+                    style={{ ...S.input, marginTop: 10, marginBottom: 0, fontSize: 12, padding: "8px 10px", background: "#fef2f2" }} 
+                    placeholder="⚠️ Describí el riesgo observado..." 
                     value={notes[c.id] || ""} 
                     onChange={e => setNotes({ ...notes, [c.id]: e.target.value })}
                   />
@@ -407,11 +463,11 @@ function ConductaFlow({ conductas, context, onSave, onCancel }: any) {
       ))}
       
       <button 
-        style={{ ...S.btn, ...S.btnP, marginTop: 10, opacity: total > 0 ? 1 : 0.4 }} 
-        disabled={total === 0}
+        style={{ ...S.btn, ...S.btnP, marginTop: 10, opacity: answered > 0 ? 1 : 0.4 }} 
+        disabled={answered === 0}
         onClick={() => setPhase("result")}
       >
-        Finalizar Observación ({total})
+        Finalizar Observación ({answered})
       </button>
     </div>
   );
@@ -424,12 +480,14 @@ function InspectionFlow({ std, onSave, onCancel }: any) {
   const [phase, setPhase] = useState("inspect");
   const [aiText, setAiText] = useState("");
   const [aiLoad, setAiLoad] = useState(false);
+
   const items = std.items, item = items[idx];
-  const pct = Math.round(idx / items.length * 100);
+  const progress = Math.round((idx / items.length) * 100);
   const score = calcScore(scores);
   const canFinish = Object.keys(scores).length === items.length;
   const lvColor: Record<string, any> = { I: { bg: "#e0f2fe", color: "#0369a1" }, A: { bg: "#fef3c7", color: "#92400e" }, E: { bg: "#fce7f3", color: "#9d174d" } };
   const lvLabel: Record<string, string> = { I: "Ingeniería", A: "Administrativo", E: "EPP" };
+
   async function getAI() {
     setAiLoad(true);
     const devs = items.filter((i: any) => scores[i.id] > 0).map((i: any) => `${i.t} (desvío ${scores[i.id]})`).join("\n");
@@ -437,11 +495,18 @@ function InspectionFlow({ std, onSave, onCancel }: any) {
     setAiText(recs);
     setAiLoad(false);
   }
+
+  function share(data: any) {
+    const text = `🛡️ *Reporte de Inspección HSE*\n\n📋 Estándar: ${std.titulo}\n👤 Inspector: ${std.context.inspector}\n📍 Ubicación: ${std.context.sitio}\n\n📊 Cumplimiento: ${data.pct}%\n⚠️ Riesgo IPER: ${data.iper}\n\n_Generado por EHS Audit Pro_`;
+    const url = `https://wa.me/?text=${encodeURIComponent(text)}`;
+    window.open(url, "_blank");
+  }
+
   if (phase === "result") {
     const c = pctColor(score.pct);
     return (
       <div style={S.screen}>
-        <button style={{ ...S.btn, ...S.sm, width: "auto", marginBottom: 14 }} onClick={onCancel}>← Cancelar</button>
+        <button style={{ ...S.btn, ...S.sm, width: "auto", marginBottom: 14 }} onClick={() => setPhase("inspect")}>← Volver</button>
         <div style={{ textAlign: "center", marginBottom: 16 }}>
           <div style={{ width: 120, height: 120, borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", flexDirection: "column", margin: "0 auto 14px", border: `4px solid ${c}` }}>
             <div style={{ fontSize: 28, fontWeight: 700, color: c }}>{score.pct}%</div>
@@ -458,38 +523,57 @@ function InspectionFlow({ std, onSave, onCancel }: any) {
         {aiText && <div style={{ background: "var(--color-background-secondary)", border: "1px solid var(--color-border-tertiary)", borderRadius: 10, padding: 12, fontSize: 12, lineHeight: 1.7, marginBottom: 14 }}><div style={{ fontWeight: 600, fontSize: 11, color: "var(--color-text-tertiary)", marginBottom: 6 }}>Recomendaciones IA</div>{aiText}</div>}
         <div style={{ display: "flex", gap: 8 }}>
           {!aiText && <button style={{ ...S.btn, flex: 1, opacity: aiLoad ? 0.6 : 1 }} onClick={getAI} disabled={aiLoad}>{aiLoad ? "⟳ Analizando…" : "🤖 Rec. IA"}</button>}
+          <button style={{ ...S.btn, flex: 1 }} onClick={() => share(score)}>📤 Compartir</button>
           <button style={{ ...S.btn, ...S.btnP, flex: 1 }} onClick={() => onSave({ id: uid(), stdId: std.id, date: new Date().toISOString(), scores, notes, pct: score.pct, total: score.total, max: score.max, count: score.count, iper: score.iper, ai: aiText, context: std.context })}>💾 Guardar</button>
         </div>
       </div>
     );
   }
+
   return (
     <div style={S.screen}>
-      <div style={{ display: "flex", gap: 8, alignItems: "center", marginBottom: 12 }}>
-        <button style={{ ...S.btn, ...S.sm, width: "auto" }} onClick={onCancel}>←</button>
-        <div style={{ flex: 1 }}><div style={{ fontWeight: 600, fontSize: 13 }}>{std.titulo}</div><div style={{ fontSize: 11, color: "var(--color-text-tertiary)" }}>{idx + 1} / {items.length}</div></div>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
+        <div style={{ fontSize: 11, fontWeight: 700, color: "#0ea5e9", textTransform: "uppercase" }}>{std.titulo}</div>
+        <button style={{ ...S.btn, ...S.sm, width: "auto" }} onClick={onCancel}>Salir</button>
       </div>
-      <div style={{ height: 6, background: "var(--color-border-tertiary)", borderRadius: 3, margin: "10px 0" }}><div style={{ height: "100%", borderRadius: 3, background: "#0ea5e9", width: pct + "%", transition: "width .3s" }} /></div>
-      <div style={{ ...S.card, marginTop: 8 }}>
+
+      <div style={{ marginBottom: 16 }}>
+        <div style={{ display: "flex", justifyContent: "space-between", fontSize: 11, fontWeight: 600, color: "var(--color-text-tertiary)", marginBottom: 4 }}>
+          <span>Ítem {idx + 1} de {items.length}</span>
+          <span>{progress}%</span>
+        </div>
+        <div style={S.xpBar}><div style={{ ...S.xpFill, width: `${progress}%` }} /></div>
+      </div>
+
+      <div style={{ ...S.card, padding: 20, marginBottom: 16, border: scores[item.id] > 0 ? "2px solid #ef4444" : "1px solid var(--color-border-tertiary)" }}>
         <div style={{ fontSize: 10, fontWeight: 700, padding: "3px 9px", borderRadius: 4, display: "inline-block", marginBottom: 8, ...(lvColor[item.n] || { bg: "#f1f5f9", color: "#475569" }) }}>{lvLabel[item.n] || item.n}</div>
-        <p style={{ fontSize: 13, lineHeight: 1.5, marginBottom: 0 }}>{item.t}</p>
-        <div style={{ display: "flex", gap: 8, marginTop: 14, justifyContent: "center" }}>
-          {[0, 1, 2, 3].map(v => {
-            const col = ["#10b981", "#f59e0b", "#f97316", "#ef4444"][v];
+        <p style={{ fontSize: 15, fontWeight: 600, lineHeight: 1.5, marginBottom: 20 }}>{item.t}</p>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+          {[ [0, "Excelente", "#10b981"], [1, "Menor", "#f59e0b"], [2, "Mayor", "#f97316"], [3, "No cumple", "#ef4444"] ].map(([v, l, c]: any) => {
             const sel = scores[item.id] === v;
-            return <button key={v} onClick={() => setScores(p => ({ ...p, [item.id]: v }))} style={{ width: 54, height: 54, borderRadius: 8, border: `2px solid ${sel ? col : "var(--color-border-secondary)"}`, background: sel ? col : "var(--color-background-primary)", color: sel ? "#fff" : col, fontSize: 18, fontWeight: 700, cursor: "pointer" }}>{v}</button>;
+            return (
+              <button key={v} onClick={() => setScores(p => ({ ...p, [item.id]: v }))} style={{ padding: "12px", borderRadius: 10, border: "2px solid", fontSize: 13, fontWeight: 700, cursor: "pointer", transition: "all .2s",
+                background: sel ? c : "transparent",
+                borderColor: sel ? c : "var(--color-border-secondary)",
+                color: sel ? "#fff" : "var(--color-text-primary)"
+              }}>{l}</button>
+            );
           })}
         </div>
-        {scores[item.id] > 0 && <textarea rows={2} placeholder="Observación (opcional)…" value={notes[item.id] || ""} onChange={e => setNotes(p => ({ ...p, [item.id]: e.target.value }))} style={{ width: "100%", marginTop: 10, padding: "8px 10px", borderRadius: 8, border: "1px solid var(--color-border-secondary)", background: "var(--color-background-tertiary)", color: "var(--color-text-primary)", fontSize: 12, resize: "none", fontFamily: "var(--font-sans)" }} />}
-        <div style={{ display: "flex", gap: 8, marginTop: 8, flexWrap: "wrap" }}>
-          {["0=Sin desvío", "1=Menor", "2=Mayor", "3=No cumple"].map((l, i) => <span key={i} style={{ fontSize: 10, color: ["#10b981", "#f59e0b", "#f97316", "#ef4444"][i] }}>{l}</span>)}
-        </div>
       </div>
-      <div style={{ display: "flex", gap: 8, marginTop: 12 }}>
-        {idx > 0 && <button style={{ ...S.btn, flex: 1 }} onClick={() => setIdx(i => i - 1)}>← Anterior</button>}
-        {idx < items.length - 1
-          ? <button style={{ ...S.btn, ...S.btnP, flex: 1, opacity: scores[item.id] === undefined ? 0.4 : 1 }} disabled={scores[item.id] === undefined} onClick={() => setIdx(i => i + 1)}>Siguiente →</button>
-          : <button style={{ ...S.btn, ...S.btnP, flex: 1, opacity: canFinish ? 1 : 0.4 }} disabled={!canFinish} onClick={() => setPhase("result")}>Ver resultado ✓</button>}
+
+      {scores[item.id] > 0 && (
+        <div style={{ marginBottom: 16 }}>
+          <div style={{ fontSize: 11, fontWeight: 700, color: "#ef4444", marginBottom: 6, textTransform: "uppercase" }}>Observación del Desvío</div>
+          <textarea style={{ ...S.input, height: 80, padding: 12, fontSize: 13, background: "#fef2f2" }} placeholder="Describí el hallazgo..." value={notes[item.id] || ""} onChange={e => setNotes(p => ({ ...p, [item.id]: e.target.value }))} />
+        </div>
+      )}
+
+      <div style={{ display: "flex", gap: 10 }}>
+        <button style={{ ...S.btn, flex: 1, opacity: idx === 0 ? 0.3 : 1 }} disabled={idx === 0} onClick={() => setIdx(i => i - 1)}>Anterior</button>
+        <button style={{ ...S.btn, ...S.btnP, flex: 1, opacity: scores[item.id] === undefined ? 0.5 : 1 }} disabled={scores[item.id] === undefined} onClick={() => idx < items.length - 1 ? setIdx(i => i + 1) : setPhase("result")}>
+          {idx < items.length - 1 ? "Siguiente" : "Ver Resultados"}
+        </button>
       </div>
     </div>
   );
@@ -531,6 +615,7 @@ function HistoryScreen({ history, standards }: any) {
 function SettingsScreen({ state, standards, syncStatus, lastSync, onRefresh, onChange, onRunWizard }: any) {
   const [seedSt, setSeedSt] = useState<string | null>(null);
   const [seedCondSt, setSeedCondSt] = useState<string | null>(null);
+  const [seedPlanSt, setSeedPlanSt] = useState<string | null>(null);
 
   async function seed() {
     if (!state.config.sheetsUrl) return;
@@ -552,6 +637,17 @@ function SettingsScreen({ state, standards, syncStatus, lastSync, onRefresh, onC
       setSeedCondSt(d.ok ? "ok" : "error");
       if (d.ok) setTimeout(() => setSeedCondSt(null), 3000);
     } catch { setSeedCondSt("error") }
+  }
+
+  async function seedPlan() {
+    if (!state.config.sheetsUrl) return;
+    setSeedPlanSt("loading");
+    try {
+      const r = await fetch(state.config.sheetsUrl, { method: "POST", body: JSON.stringify({ action: "seed_plan" }) });
+      const d = await r.json();
+      setSeedPlanSt(d.ok ? "ok" : "error");
+      if (d.ok) setTimeout(() => setSeedPlanSt(null), 3000);
+    } catch { setSeedPlanSt("error") }
   }
 
   return (
@@ -585,6 +681,15 @@ function SettingsScreen({ state, standards, syncStatus, lastSync, onRefresh, onC
             {seedCondSt === "ok" && <Alert type="ok" text="✅ Conductas enviadas." />}
             {seedCondSt === "error" && <Alert type="err" text="❌ Error al enviar." />}
           </div>
+
+          <div style={{ ...S.card, padding: 12, marginBottom: 12 }}>
+            <div style={{ fontSize: 12, color: "var(--color-text-tertiary)", marginBottom: 8 }}>Plan Semanal de Inspección:</div>
+            <div style={{ fontSize: 10, color: "var(--color-text-tertiary)", marginBottom: 8 }}>Se leerá de la hoja <strong>"Plan"</strong>.</div>
+            {!seedPlanSt && <button style={{ ...S.btn, fontSize: 12, padding: "8px 12px" }} onClick={seedPlan}>📅 Inicializar Hoja de Plan</button>}
+            {seedPlanSt === "loading" && <Alert type="warn" text="⏳ Creando hoja de plan…" />}
+            {seedPlanSt === "ok" && <Alert type="ok" text="✅ Hoja de Plan creada." />}
+            {seedPlanSt === "error" && <Alert type="err" text="❌ Error al crear." />}
+          </div>
         </>
       ) : <button style={{ ...S.btn, ...S.btnP }} onClick={onRunWizard}>⚙ Configurar Google Sheets</button>}
       <div style={S.sep} />
@@ -595,7 +700,18 @@ function SettingsScreen({ state, standards, syncStatus, lastSync, onRefresh, onC
   );
 }
 
-const DEFAULT = { user: { lastDate: null }, history: [], standards: null, conductas: null, config: { sheetsUrl: "", wizardDone: false, lastSync: null } };
+const DEFAULT = { 
+  user: { lastDate: null }, 
+  history: [], 
+  standards: null, 
+  conductas: null, 
+  plan: null, 
+  config: { 
+    sheetsUrl: "https://script.google.com/macros/s/AKfycbweT1Bd_YhBbVMl4JVf5DsHTF8nLb3yOJej-qV9Dcd-3uQIerDfURI-RHQmfasTsnTsBA/exec", 
+    wizardDone: false, 
+    lastSync: null 
+  } 
+};
 
 export default function App() {
   const [state, setState] = useState(DEFAULT);
@@ -610,7 +726,14 @@ export default function App() {
 
   useEffect(() => {
     loadData().then(d => {
-      if (d) { setState(d); setLastSync(d.config?.lastSync || null) }
+      if (d) { 
+        // Si el usuario ya tiene datos pero la URL está vacía, usamos la nueva por defecto
+        if (!d.config?.sheetsUrl) {
+          d.config.sheetsUrl = DEFAULT.config.sheetsUrl;
+        }
+        setState(d); 
+        setLastSync(d.config?.lastSync || null) 
+      }
       else setShowWizard(true);
       setLoaded(true);
     });
@@ -623,12 +746,13 @@ export default function App() {
     if (!u) { setSyncStatus("offline"); return }
     setSyncStatus("loading");
     try {
-      const [rStd, rCond] = await Promise.all([
+      const [rStd, rCond, rPlan] = await Promise.all([
         fetch(`${u}?action=standards`).then(r => r.json()),
-        fetch(`${u}?action=conductas`).then(r => r.json())
+        fetch(`${u}?action=conductas`).then(r => r.json()),
+        fetch(`${u}?action=plan`).then(r => r.json())
       ]);
       
-      if (rStd.ok || rCond.ok) {
+      if (rStd.ok || rCond.ok || rPlan.ok) {
         const ts = new Date().toISOString();
         setLastSync(ts); setSyncStatus("ok");
         setState(s => { 
@@ -636,6 +760,7 @@ export default function App() {
             ...s, 
             standards: rStd.ok ? rStd.standards : s.standards,
             conductas: rCond.ok ? rCond.conductas : s.conductas,
+            plan: rPlan.ok ? rPlan.plan : s.plan,
             config: { ...s.config, lastSync: ts } 
           }; 
           saveData(ns); 
@@ -643,7 +768,7 @@ export default function App() {
         });
       } else setSyncStatus(state.standards ? "offline" : "error");
     } catch { setSyncStatus(state.standards ? "offline" : "error") }
-  }, [state.config.sheetsUrl, state.standards, state.conductas]);
+  }, [state.config.sheetsUrl, state.standards, state.conductas, state.plan]);
 
   useEffect(() => {
     if (!loaded) return;

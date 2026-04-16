@@ -327,6 +327,14 @@ function doGet(e) {
     const list=data.map(r=>({id:r[0]+"",cat:r[1]+"",t:r[2]+""}));
     return json({ok:true,conductas:list,ts:new Date().toISOString()});
   }
+  if(a==="plan"){
+    const sh=SS.getSheetByName("Plan");
+    if(!sh) return json({ok:false,error:"Hoja no encontrada"});
+    const rows=sh.getDataRange().getValues();
+    const data=rows.slice(1).filter(r=>r[0]&&r[1]);
+    const list=data.map(r=>({fecha:r[0],inspector:r[1],tipo:r[2],stdId:r[3],lugar:r[4]}));
+    return json({ok:true,plan:list,ts:new Date().toISOString()});
+  }
   return json({ok:true,status:"conectado",ts:new Date().toISOString()});
 }
 function doPost(e){
@@ -348,6 +356,13 @@ function doPost(e){
       const rows=d.conductas.map(c=>[c.id,c.cat,c.t]);
       if(rows.length) sh.getRange(2,1,rows.length,3).setValues(rows);
       return json({ok:true,count:rows.length});
+    }
+    if(d.action==="seed_plan"){
+      let sh=SS.getSheetByName("Plan")||SS.insertSheet("Plan");
+      sh.clearContents();
+      sh.appendRow(["Fecha","Inspector","Tipo (estandar/conducta)","ID Estándar (si aplica)","Lugar"]);
+      sh.appendRow([new Date().toLocaleDateString(),"Inspector Ejemplo","estandar","e1","Nave Principal"]);
+      return json({ok:true});
     }
     if(d.type==="conducta"){
       let sh=SS.getSheetByName("Conductas")||SS.insertSheet("Conductas");
