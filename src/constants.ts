@@ -335,6 +335,24 @@ function doGet(e) {
     const list=data.map(r=>({fecha:r[0],inspector:r[1],tipo:r[2],stdId:r[3],lugar:r[4]}));
     return json({ok:true,plan:list,ts:new Date().toISOString()});
   }
+  if(a==="sync_history"){
+    const h=[];
+    const shI=SS.getSheetByName("Inspecciones");
+    if(shI){
+      const rows=shI.getDataRange().getValues();
+      rows.slice(1).filter(r=>r[0]).forEach(r=>{
+        h.push({id:r[0]+"",date:r[1],type:"estandar",stdId:r[8]+"",pct:r[11],total:r[13],iper:r[14],context:{inspector:r[2],sitio:r[3],udn:r[4],area:r[5],puesto:r[6],estacion:r[7]}});
+      });
+    }
+    const shC=SS.getSheetByName("Conductas");
+    if(shC){
+      const rows=shC.getDataRange().getValues();
+      rows.slice(1).filter(r=>r[0]).forEach(r=>{
+        h.push({id:r[0]+"",date:r[1],type:"conducta",safe:r[8],risk:r[9],total:r[10],pct:r[11],context:{inspector:r[2],sitio:r[3],udn:r[4],area:r[5],puesto:r[6],estacion:r[7]}});
+      });
+    }
+    return json({ok:true,history:h.sort((a,b)=>new Date(b.date).getTime()-new Date(a.date).getTime()).slice(0,50)});
+  }
   return json({ok:true,status:"conectado",ts:new Date().toISOString()});
 }
 function doPost(e){
@@ -366,13 +384,13 @@ function doPost(e){
     }
     if(d.type==="conducta"){
       let sh=SS.getSheetByName("Conductas")||SS.insertSheet("Conductas");
-      if(sh.getLastRow()===0) sh.appendRow(["ID","Fecha","Inspector","Sitio","UDN","Área","Puesto","Estación","Seguros","Riesgos","Total","% Seguro","Detalle"]);
-      sh.appendRow([d.id,d.date,d.inspector,d.sitio,d.udn,d.area,d.puesto,d.estacion,d.safe,d.risk,d.total,d.pct,JSON.stringify(d.results)]);
+      if(sh.getLastRow()===0) sh.appendRow(["ID","Fecha","Inspector","Sitio","UDN","Área","Puesto","Estación","Seguros","Riesgos","Total_Items","%_Seguro","Detalle","Observaciones"]);
+      sh.appendRow([d.id, d.date, d.inspector, d.sitio, d.udn, d.area, d.puesto, d.estacion, d.safe, d.risk, d.total, d.pct, d.detalle, d.observaciones]);
       return json({ok:true});
     }
     let sh=SS.getSheetByName("Inspecciones")||SS.insertSheet("Inspecciones");
-    if(sh.getLastRow()===0) sh.appendRow(["ID","Fecha","Inspector","Sitio","UDN","Área","Puesto","Estación","Código","Estándar","Categoría","% Cumpl.","Ítems","Desvíos","Prob.IPER"]);
-    sh.appendRow([d.id,d.date,d.inspector,d.sitio,d.udn,d.area,d.puesto,d.estacion,d.stdId,d.titulo,d.cat,d.pct,d.count,d.total,d.iper]);
+    if(sh.getLastRow()===0) sh.appendRow(["ID","Fecha","Inspector","Sitio","UDN","Área","Puesto","Estación","Código_Estándar","Nombre_Estándar","Categoría","%_Cumplimiento","Total_Items","Cant_Desvíos","Suma_Puntos","Prob_IPER","Observaciones"]);
+    sh.appendRow([d.id, d.date, d.inspector, d.sitio, d.udn, d.area, d.puesto, d.estacion, d.stdId, d.titulo, d.cat, d.pct, d.count, d.qDesvios, d.total, d.iper, d.observaciones]);
     return json({ok:true});
   }catch(err){return json({ok:false,error:err.message});}
 }

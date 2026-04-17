@@ -49,16 +49,16 @@ function timeAgo(iso: string | null) {
 const S: Record<string, React.CSSProperties> = {
   app: { maxWidth: 480, margin: "0 auto", minHeight: "100vh", fontFamily: "var(--font-sans)", fontSize: 14, color: "var(--color-text-primary)", display: "flex", flexDirection: "column" },
   screen: { flex: 1, overflowY: "auto", padding: "20px 16px", paddingBottom: 90 },
-  card: { background: "var(--color-background-primary)", border: "1px solid var(--color-border-tertiary)", borderRadius: 14, padding: 18, marginBottom: 14 },
-  btn: { display: "flex", alignItems: "center", justifyContent: "center", gap: 8, padding: "11px 18px", borderRadius: 8, border: "1.5px solid var(--color-border-secondary)", background: "var(--color-background-primary)", color: "var(--color-text-primary)", fontSize: 13, fontWeight: 500, cursor: "pointer", width: "100%" },
+  card: { background: "var(--color-background-primary)", borderWidth: 1, borderStyle: "solid", borderColor: "var(--color-border-tertiary)", borderRadius: 14, padding: 18, marginBottom: 14 },
+  btn: { display: "flex", alignItems: "center", justifyContent: "center", gap: 8, padding: "11px 18px", borderRadius: 8, borderWidth: 1.5, borderStyle: "solid", borderColor: "var(--color-border-secondary)", background: "var(--color-background-primary)", color: "var(--color-text-primary)", fontSize: 13, fontWeight: 500, cursor: "pointer", width: "100%" },
   btnP: { background: "#0ea5e9", borderColor: "#0ea5e9", color: "#fff" },
   btnG: { background: "#10b981", borderColor: "#10b981", color: "#fff" },
   sm: { padding: "8px 14px", fontSize: 12, width: "auto" },
   nav: { display: "flex", borderTop: "1px solid var(--color-border-tertiary)", background: "var(--color-background-primary)", padding: "6px 0 2px", position: "fixed", bottom: 0, left: "50%", transform: "translateX(-50%)", width: "100%", maxWidth: 480, zIndex: 100 },
   navBtn: { flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 3, padding: "8px 4px", background: "none", border: "none", cursor: "pointer", color: "var(--color-text-tertiary)", fontSize: 10, fontWeight: 500 },
-  input: { width: "100%", padding: "11px 14px", borderRadius: 8, border: "1.5px solid var(--color-border-secondary)", background: "var(--color-background-tertiary)", color: "var(--color-text-primary)", fontSize: 13, fontFamily: "var(--font-sans)", marginBottom: 8, boxSizing: "border-box" },
+  input: { width: "100%", padding: "11px 14px", borderRadius: 8, borderWidth: 1.5, borderStyle: "solid", borderColor: "var(--color-border-secondary)", background: "var(--color-background-tertiary)", color: "var(--color-text-primary)", fontSize: 13, fontFamily: "var(--font-sans)", marginBottom: 8, boxSizing: "border-box" },
   statRow: { display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10, margin: "12px 0" },
-  statBox: { background: "var(--color-background-secondary)", border: "1px solid var(--color-border-tertiary)", borderRadius: 8, padding: 12, textAlign: "center" },
+  statBox: { background: "var(--color-background-secondary)", borderWidth: 1, borderStyle: "solid", borderColor: "var(--color-border-tertiary)", borderRadius: 8, padding: 12, textAlign: "center" },
   xpBar: { height: 8, borderRadius: 4, background: "var(--color-border-tertiary)", overflow: "hidden", margin: "6px 0" },
   xpFill: { height: "100%", borderRadius: 4, background: "#0ea5e9", transition: "width .4s" },
   sep: { height: 1, background: "var(--color-border-tertiary)", margin: "14px 0" },
@@ -70,19 +70,29 @@ function Alert({ type, text }: { type: 'ok' | 'warn' | 'err', text: string | Rea
   return <div style={{ padding: "11px 14px", borderRadius: 8, background: bg, color: fg, border: `1px solid ${bd}`, fontSize: 13, lineHeight: 1.5, marginBottom: 12 }}>{text}</div>;
 }
 
-function SyncBanner({ status, lastSync, onRefresh, count }: any) {
+function SyncBanner({ status, lastSync, onRefresh }: any) {
   const cfg = {
-    loading: { bg: "#e0f2fe", color: "#0c4a6e", text: "Cargando estándares desde Google Sheets…" },
-    ok: { bg: "#d1fae5", color: "#065f46", text: `${count} estándares · ${timeAgo(lastSync)}` },
-    offline: { bg: "#fef9c3", color: "#713f12", text: `Sin conexión — usando datos cacheados (${count} estándares)` },
-    error: { bg: "#fee2e2", color: "#991b1b", text: "No se pudo cargar. Usando datos integrados." },
+    loading: { bg: "#e0f2fe", color: "#0c4a6e", text: "Sincronizando con Google Sheets…" },
+    ok: { bg: "#d1fae5", color: "#065f46", text: `Sincronización al día — ${timeAgo(lastSync)}` },
+    offline: { bg: "#fef9c3", color: "#713f12", text: `Modo offline — ${timeAgo(lastSync) || "Sin datos"}` },
+    error: { bg: "#fee2e2", color: "#991b1b", text: "Error de conexión: Revisa el Web App en Config." },
   }[status as 'loading' | 'ok' | 'offline' | 'error'];
   if (!cfg) return null;
-  const icon = { loading: "⏳", ok: "✅", offline: "📶", error: "⚠️" }[status as 'loading' | 'ok' | 'offline' | 'error'];
+  const icon = { loading: "🔄", ok: "✅", offline: "📶", error: "⚠️" }[status as 'loading' | 'ok' | 'offline' | 'error'];
   return (
-    <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "8px 12px", borderRadius: 8, background: cfg.bg, color: cfg.color, fontSize: 12, marginBottom: 12, border: `1px solid ${cfg.color}33` }}>
-      <span style={{ flex: 1 }}>{icon} {cfg.text}</span>
-      {status !== "loading" && <button onClick={onRefresh} style={{ background: "none", border: "none", cursor: "pointer", color: cfg.color, fontSize: 13, fontWeight: 700, padding: 0 }}>⟳</button>}
+    <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "10px 14px", borderRadius: 10, background: cfg.bg, color: cfg.color, fontSize: 12, marginBottom: 14, border: `1px solid ${cfg.color}33`, transition: "all 0.3s" }}>
+      <span style={{ flex: 1, display: "flex", alignItems: "center", gap: 6 }}>
+        <span style={{ animation: status === "loading" ? "spin 1s linear infinite" : "none", display: "inline-block" }}>{icon}</span>
+        {cfg.text}
+      </span>
+      {status !== "loading" && (
+        <button 
+          onClick={(e) => { e.stopPropagation(); onRefresh(); }} 
+          style={{ background: cfg.color + "22", border: "none", cursor: "pointer", color: cfg.color, fontSize: 13, fontWeight: 700, padding: "4px 8px", borderRadius: 6 }}
+          title="Sincronizar ahora"
+        >⟳ Actualizar</button>
+      )}
+      <style>{`@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }`}</style>
     </div>
   );
 }
@@ -189,12 +199,22 @@ function Dashboard({ state, standards, syncStatus, lastSync, onStart, onRefresh 
   // Racha de Seguridad (días seguidos con inspecciones)
   const streak = (() => {
     if (!history.length) return 0;
-    const dates = [...new Set(history.map((i: any) => new Date(i.date).toLocaleDateString()))].sort((a: any, b: any) => new Date(b).getTime() - new Date(a).getTime());
+    const dates = [...new Set(history.map((i: any) => new Date(i.date).toISOString().split("T")[0]))].sort((a: any, b: any) => b.localeCompare(a));
     let s = 0;
     let curr = new Date();
-    for (let d of dates) {
-      if (d === curr.toLocaleDateString()) { s++; curr.setDate(curr.getDate() - 1); }
-      else break;
+    for (let i = 0; i < 30; i++) {
+      const ds = curr.toISOString().split("T")[0];
+      if (dates.includes(ds)) {
+        s++;
+        curr.setDate(curr.getDate() - 1);
+      } else {
+        if (i === 0) { // Si hoy no hay, pero ayer sí, la racha sigue viva hasta ayer
+          curr.setDate(curr.getDate() - 1);
+          const ys = curr.toISOString().split("T")[0];
+          if (dates.includes(ys)) continue;
+        }
+        break;
+      }
     }
     return s;
   })();
@@ -428,12 +448,12 @@ function ConductaFlow({ conductas, context, onSave, onCancel }: any) {
           <div style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", color: "#0ea5e9", marginBottom: 8, letterSpacing: "0.05em", paddingLeft: 4 }}>{cat}</div>
           <div style={{ display: "grid", gap: 8 }}>
             {conductas.filter((c: any) => c.cat === cat).map((c: any) => (
-              <div key={c.id} style={{ ...S.card, padding: 12, marginBottom: 0, border: results[c.id] === "R" ? "1.5px solid #ef4444" : "1px solid var(--color-border-tertiary)" }}>
+              <div key={c.id} style={{ ...S.card, padding: 12, marginBottom: 0, borderWidth: 1.5, borderStyle: "solid", borderColor: results[c.id] === "R" ? "#ef4444" : "var(--color-border-tertiary)" }}>
                 <div style={{ fontSize: 13, fontWeight: 500, marginBottom: 10 }}>{c.t}</div>
                 <div style={{ display: "flex", gap: 8 }}>
                   <button 
                     onClick={() => setResults({ ...results, [c.id]: "S" })}
-                    style={{ flex: 1, padding: "8px", borderRadius: 6, border: "1.5px solid", fontSize: 12, fontWeight: 600, cursor: "pointer", transition: "all .2s",
+                    style={{ flex: 1, padding: "8px", borderRadius: 6, borderWidth: 1.5, borderStyle: "solid", fontSize: 12, fontWeight: 600, cursor: "pointer", transition: "all .2s",
                       background: results[c.id] === "S" ? "#10b981" : "transparent",
                       borderColor: results[c.id] === "S" ? "#10b981" : "var(--color-border-secondary)",
                       color: results[c.id] === "S" ? "#fff" : "var(--color-text-primary)"
@@ -441,7 +461,7 @@ function ConductaFlow({ conductas, context, onSave, onCancel }: any) {
                   >Seguro</button>
                   <button 
                     onClick={() => setResults({ ...results, [c.id]: "R" })}
-                    style={{ flex: 1, padding: "8px", borderRadius: 6, border: "1.5px solid", fontSize: 12, fontWeight: 600, cursor: "pointer", transition: "all .2s",
+                    style={{ flex: 1, padding: "8px", borderRadius: 6, borderWidth: 1.5, borderStyle: "solid", fontSize: 12, fontWeight: 600, cursor: "pointer", transition: "all .2s",
                       background: results[c.id] === "R" ? "#ef4444" : "transparent",
                       borderColor: results[c.id] === "R" ? "#ef4444" : "var(--color-border-secondary)",
                       color: results[c.id] === "R" ? "#fff" : "var(--color-text-primary)"
@@ -545,14 +565,14 @@ function InspectionFlow({ std, onSave, onCancel }: any) {
         <div style={S.xpBar}><div style={{ ...S.xpFill, width: `${progress}%` }} /></div>
       </div>
 
-      <div style={{ ...S.card, padding: 20, marginBottom: 16, border: scores[item.id] > 0 ? "2px solid #ef4444" : "1px solid var(--color-border-tertiary)" }}>
+      <div style={{ ...S.card, padding: 20, marginBottom: 16, borderWidth: 2, borderStyle: "solid", borderColor: scores[item.id] > 0 ? "#ef4444" : "var(--color-border-tertiary)" }}>
         <div style={{ fontSize: 10, fontWeight: 700, padding: "3px 9px", borderRadius: 4, display: "inline-block", marginBottom: 8, ...(lvColor[item.n] || { bg: "#f1f5f9", color: "#475569" }) }}>{lvLabel[item.n] || item.n}</div>
         <p style={{ fontSize: 15, fontWeight: 600, lineHeight: 1.5, marginBottom: 20 }}>{item.t}</p>
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
-          {[ [0, "Excelente", "#10b981"], [1, "Menor", "#f59e0b"], [2, "Mayor", "#f97316"], [3, "No cumple", "#ef4444"] ].map(([v, l, c]: any) => {
+          {[ [0, "0", "#10b981"], [1, "1", "#f59e0b"], [2, "2", "#f97316"], [3, "3", "#ef4444"] ].map(([v, l, c]: any) => {
             const sel = scores[item.id] === v;
             return (
-              <button key={v} onClick={() => setScores(p => ({ ...p, [item.id]: v }))} style={{ padding: "12px", borderRadius: 10, border: "2px solid", fontSize: 13, fontWeight: 700, cursor: "pointer", transition: "all .2s",
+              <button key={v} onClick={() => setScores(p => ({ ...p, [item.id]: v }))} style={{ padding: "12px", borderRadius: 10, borderWidth: 2, borderStyle: "solid", fontSize: 16, fontWeight: 700, cursor: "pointer", transition: "all .2s",
                 background: sel ? c : "transparent",
                 borderColor: sel ? c : "var(--color-border-secondary)",
                 color: sel ? "#fff" : "var(--color-text-primary)"
@@ -659,7 +679,13 @@ function SettingsScreen({ state, standards, syncStatus, lastSync, onRefresh, onC
           <SyncBanner status={syncStatus} lastSync={lastSync} onRefresh={onRefresh} count={standards.length} />
           <div style={{ fontSize: 11, color: "var(--color-text-tertiary)", marginBottom: 10, wordBreak: "break-all", background: "var(--color-background-secondary)", padding: "10px 12px", borderRadius: 8, border: "1px solid var(--color-border-tertiary)" }}>{state.config.sheetsUrl.slice(0, 65)}…</div>
           <div style={{ display: "flex", gap: 8, marginBottom: 16, flexWrap: "wrap" }}>
-            <button style={{ ...S.btn, flex: 1 }} onClick={onRefresh}>⟳ Sincronizar Todo</button>
+            <button 
+              style={{ ...S.btn, flex: 1, opacity: syncStatus === "loading" ? 0.6 : 1 }} 
+              onClick={onRefresh}
+              disabled={syncStatus === "loading"}
+            >
+              {syncStatus === "loading" ? "⏳ Sincronizando..." : "⟳ Sincronizar Todo"}
+            </button>
             <button style={{ ...S.btn, flex: 1 }} onClick={onRunWizard}>🔄 Reconfigurar</button>
           </div>
           
@@ -743,31 +769,61 @@ export default function App() {
 
   const refreshStandards = useCallback(async (url?: string) => {
     const u = url || state.config.sheetsUrl;
-    if (!u) { setSyncStatus("offline"); return }
+    if (!u || !u.startsWith("http")) {
+      console.warn("Sync: URL no configurada o inválida");
+      setSyncStatus("offline");
+      return;
+    }
+    
     setSyncStatus("loading");
+    console.log("Sync iniciado:", u);
+
     try {
-      const [rStd, rCond, rPlan] = await Promise.all([
-        fetch(`${u}?action=standards`).then(r => r.json()),
-        fetch(`${u}?action=conductas`).then(r => r.json()),
-        fetch(`${u}?action=plan`).then(r => r.json())
+      const sep = u.includes("?") ? "&" : "?";
+      const [rStd, rCond, rPlan, rHist] = await Promise.all([
+        fetch(`${u}${sep}action=standards`).then(r => r.json()).catch(err => { console.error("Sync Standards Error:", err); return { ok: false }; }),
+        fetch(`${u}${sep}action=conductas`).then(r => r.json()).catch(err => { console.error("Sync Conductas Error:", err); return { ok: false }; }),
+        fetch(`${u}${sep}action=plan`).then(r => r.json()).catch(err => { console.error("Sync Plan Error:", err); return { ok: false }; }),
+        fetch(`${u}${sep}action=sync_history`).then(r => r.json()).catch(err => { console.error("Sync History Error:", err); return { ok: false }; })
       ]);
       
-      if (rStd.ok || rCond.ok || rPlan.ok) {
+      const anyOk = rStd.ok || rCond.ok || rPlan.ok || rHist.ok;
+      console.log("Resultados Sync:", { standards: rStd.ok, conductas: rCond.ok, plan: rPlan.ok, history: rHist.ok });
+
+      if (anyOk) {
         const ts = new Date().toISOString();
-        setLastSync(ts); setSyncStatus("ok");
+        setLastSync(ts);
+        setSyncStatus("ok");
+        
         setState(s => { 
+          let mergedHistory = s.history;
+          if (rHist.ok && rHist.history) {
+            const serverIds = new Set(rHist.history.map((h: any) => h.id));
+            const localOnly = s.history.filter((h: any) => !serverIds.has(h.id));
+            mergedHistory = [...rHist.history, ...localOnly]
+              .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+              .slice(0, 100);
+          }
+
           const ns = { 
             ...s, 
             standards: rStd.ok ? rStd.standards : s.standards,
             conductas: rCond.ok ? rCond.conductas : s.conductas,
             plan: rPlan.ok ? rPlan.plan : s.plan,
+            history: mergedHistory,
             config: { ...s.config, lastSync: ts } 
           }; 
           saveData(ns); 
           return ns;
         });
-      } else setSyncStatus(state.standards ? "offline" : "error");
-    } catch { setSyncStatus(state.standards ? "offline" : "error") }
+      } else {
+        console.warn("Sync: Todas las acciones fallaron.");
+        setSyncStatus(state.standards ? "offline" : "error");
+      }
+    } catch (err) {
+      console.error("Error Crítico de Sync:", err);
+      setSyncStatus(state.standards ? "offline" : "error");
+    }
   }, [state.config.sheetsUrl, state.standards, state.conductas, state.plan]);
 
   useEffect(() => {
@@ -797,19 +853,53 @@ export default function App() {
       : standards.find((s: any) => s.id === inspection.stdId) || { titulo: inspection.stdId, cat: "instalaciones" };
     
     const cc = CATS[std.cat] || { label: std.cat || "Conducta" };
+    
+    // Actualización optimista del estado local
     setState(s => {
-      const newHistory = [...s.history, inspection];
+      const newHistory = [inspection, ...s.history].slice(0, 100);
       const ns = { ...s, history: newHistory };
       saveData(ns);
-      if (s.config.sheetsUrl) {
-        const body = inspection.type === "conducta"
-          ? { ...inspection, inspector: inspection.context.inspector, sitio: inspection.context.sitio, udn: inspection.context.udn, area: inspection.context.area, puesto: inspection.context.puesto, estacion: inspection.context.estacion }
-          : { ...inspection, titulo: std.titulo, cat: cc.label, inspector: inspection.context.inspector, sitio: inspection.context.sitio, udn: inspection.context.udn, area: inspection.context.area, puesto: inspection.context.puesto, estacion: inspection.context.estacion };
-        
-        fetch(s.config.sheetsUrl, { method: "POST", body: JSON.stringify(body) }).catch(() => { });
-      }
       return ns;
     });
+
+    // Envío asíncrono a la nube
+    if (state.config.sheetsUrl) {
+      // Unificar observaciones en una sola cadena
+      const obsUnificadas = Object.values(inspection.notes || {})
+        .filter(v => typeof v === "string" && v.trim() !== "")
+        .join(" | ");
+
+      const body = inspection.type === "conducta"
+        ? { 
+            ...inspection, 
+            inspector: inspection.context.inspector, 
+            sitio: inspection.context.sitio, 
+            udn: inspection.context.udn, 
+            area: inspection.context.area, 
+            puesto: inspection.context.puesto, 
+            estacion: inspection.context.estacion,
+            observaciones: obsUnificadas,
+            detalle: JSON.stringify(inspection.results)
+          }
+        : { 
+            ...inspection, 
+            titulo: std.titulo, 
+            cat: cc.label, 
+            inspector: inspection.context.inspector, 
+            sitio: inspection.context.sitio, 
+            udn: inspection.context.udn, 
+            area: inspection.context.area, 
+            puesto: inspection.context.puesto, 
+            estacion: inspection.context.estacion,
+            observaciones: obsUnificadas,
+            qDesvios: Object.values(inspection.scores || {}).filter(v => (v as number) > 0).length
+          };
+      
+      fetch(state.config.sheetsUrl, { method: "POST", body: JSON.stringify(body) })
+        .then(() => refreshStandards()) // Sincronizar de nuevo para confirmar
+        .catch(() => { });
+    }
+
     setActiveStd(null); setActiveCond(null); setTab("home");
   }
 
