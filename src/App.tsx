@@ -248,7 +248,7 @@ function Dashboard({ state, standards, syncStatus, lastSync, onStart, onRefresh 
         </div>
       ) : (
         <div style={{ ...S.card, background: "linear-gradient(135deg, #0f172a 0%, #1e293b 100%)", color: "#fff", padding: 20, marginBottom: 16, borderRadius: 16 }}>
-          <div style={{ fontSize: 14, opacity: 0.8, marginBottom: 4 }}>EHS Audit Pro</div>
+          <div style={{ fontSize: 14, opacity: 0.8, marginBottom: 4 }}>EHS Audit Pro - MABE-CORDOBA-</div>
           <div style={{ fontSize: 18, fontWeight: 700 }}>Sin inspecciones programadas para hoy.</div>
         </div>
       )}
@@ -398,7 +398,7 @@ function ConductaFlow({ conductas, context, onSave, onCancel }: any) {
   const pct = total > 0 ? Math.round((safe / total) * 100) : 100;
 
   function share(data: any) {
-    const text = `🛡️ *Reporte de Conductas HSE*\n\n📅 Fecha: ${new Date(data.date).toLocaleDateString()}\n👤 Inspector: ${data.context.inspector}\n📍 Ubicación: ${data.context.sitio} - ${data.context.area}\n\n✅ Seguros: ${data.safe}\n⚠️ Riesgos: ${data.risk}\n📊 Cumplimiento: ${data.pct}%\n\n_Generado por EHS Audit Pro_`;
+    const text = `🛡️ *Reporte de Conductas HSE*\n\n📅 Fecha: ${new Date(data.date).toLocaleDateString()}\n👤 Inspector: ${data.context.inspector}\n📍 Ubicación: ${data.context.sitio} - ${data.context.area}\n\n✅ Seguros: ${data.safe}\n⚠️ Riesgos: ${data.risk}\n📊 Cumplimiento: ${data.pct}%\n\n_Generado por EHS Audit Pro (MABE-CORDOBA-)_`;
     const url = `https://wa.me/?text=${encodeURIComponent(text)}`;
     window.open(url, "_blank");
   }
@@ -517,7 +517,7 @@ function InspectionFlow({ std, onSave, onCancel }: any) {
   }
 
   function share(data: any) {
-    const text = `🛡️ *Reporte de Inspección HSE*\n\n📋 Estándar: ${std.titulo}\n👤 Inspector: ${std.context.inspector}\n📍 Ubicación: ${std.context.sitio}\n\n📊 Cumplimiento: ${data.pct}%\n⚠️ Riesgo IPER: ${data.iper}\n\n_Generado por EHS Audit Pro_`;
+    const text = `🛡️ *Reporte de Inspección HSE*\n\n📋 Estándar: ${std.titulo}\n👤 Inspector: ${std.context.inspector}\n📍 Ubicación: ${std.context.sitio}\n\n📊 Cumplimiento: ${data.pct}%\n⚠️ Riesgo IPER: ${data.iper}\n\n_Generado por EHS Audit Pro (MABE-CORDOBA-)_`;
     const url = `https://wa.me/?text=${encodeURIComponent(text)}`;
     window.open(url, "_blank");
   }

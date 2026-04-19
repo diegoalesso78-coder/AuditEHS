@@ -1,6 +1,6 @@
-{
-  "name": "EHS Audit Pro",
-  "description": "A professional web application for EHS (Environment, Health, and Safety) audits with Google Sheets integration and AI-powered recommendations.",
+ {
+  "name": "EHS Audit Pro - MABE-CORDOBA-",
+  "description": "Professional EHS audit application for MABE-CORDOBA- with Google Sheets integration.",
   "requestFramePermissions": [],
   "majorCapabilities": []
 }
