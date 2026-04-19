@@ -302,7 +302,7 @@ function doGet(e) {
     if(shI){
       const rows=shI.getDataRange().getValues();
       rows.slice(1).filter(r=>r[0]).forEach(r=>{
-        h.push({id:r[0]+"",date:r[1],type:"estandar",stdId:r[8]+"",pct:r[11],total:r[13],iper:r[14],context:{inspector:r[2],sitio:r[3],udn:r[4],area:r[5],puesto:r[6],estacion:r[7]}});
+        h.push({id:r[0]+"",date:r[1],type:"estandar",stdId:r[8]+"",pct:r[11],total:r[14],iper:r[15],context:{inspector:r[2],sitio:r[3],udn:r[4],area:r[5],puesto:r[6],estacion:r[7]}});
       });
     }
     const shC=SS.getSheetByName("Conductas");
